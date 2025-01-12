@@ -1,6 +1,8 @@
 import pandas as pd
 
 from flask import Flask
+from flask import jsonify
+from flask import request
 from googletrans import Translator
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
@@ -8,8 +10,9 @@ from textblob import TextBlob
 
 
 df = pd.read_csv("casas.csv")
-colunas = ['tamanho', 'preco']
-df = df[colunas]
+
+colunas = ['tamanho', 'ano', 'garagem']
+
 X = df.drop('preco', axis=1)
 y = df['preco']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
@@ -31,9 +34,11 @@ def sentimento(frase):
     return f"polatidade {polatidade}"
 
 
-@app.route('/cotacao/<int:tamanho>')
-def cotacao(tamanho):
-    preco = model.predict([[tamanho]])
-    return str(preco)
+@app.route('/cotacao/', methods = ['POST'])
+def cotacao():
+    dados = request.get_json()
+    dados_input = [dados[col] for col in colunas]
+    preco = model.predict([dados_input])
+    return jsonify(preco=preco[0])
 
 app.run(debug=True)
